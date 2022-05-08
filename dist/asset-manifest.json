@@ -1,0 +1,9 @@
+{
+  "files": {
+    "main.js": "/server.js",
+    "index.html": "/index.html"
+  },
+  "entrypoints": [
+    "server.js"
+  ]
+}
