@@ -1,11 +1,11 @@
 {
-  "hash": "f22423e0eccba72a9553",
+  "hash": "ca402c65acb6476460c5",
   "publicPath": "/",
   "outputPath": "/home/sunrise/dev/web/react/ssr-recipe-saga/build",
   "assetsByChunkName": {
     "main": [
       "static/css/main.e6c13ad2.css",
-      "static/js/main.3866c441.js"
+      "static/js/main.e91d3a4f.js"
     ],
     "pages-RedPage": [
       "static/css/pages-RedPage.113fbfe2.chunk.css",
@@ -22,19 +22,19 @@
   "assets": [
     {
       "type": "asset",
-      "name": "static/js/main.3866c441.js",
-      "size": 241116,
+      "name": "static/js/main.e91d3a4f.js",
+      "size": 242341,
       "emitted": false,
       "comparedForEmit": false,
       "cached": true,
       "info": {
         "immutable": true,
-        "contenthash": "3866c441",
+        "contenthash": "e91d3a4f",
         "javascriptModule": false,
         "minimized": true,
         "related": {
-          "license": "static/js/main.3866c441.js.LICENSE.txt",
-          "sourceMap": "static/js/main.3866c441.js.map"
+          "license": "static/js/main.e91d3a4f.js.LICENSE.txt",
+          "sourceMap": "static/js/main.e91d3a4f.js.map"
         }
       },
       "chunkNames": [
@@ -267,7 +267,7 @@
           "name": "static/css/main.e6c13ad2.css"
         },
         {
-          "name": "static/js/main.3866c441.js"
+          "name": "static/js/main.e91d3a4f.js"
         }
       ],
       "filteredAssets": 0,
@@ -341,7 +341,7 @@
       "id": 179,
       "files": [
         "static/css/main.e6c13ad2.css",
-        "static/js/main.3866c441.js"
+        "static/js/main.e91d3a4f.js"
       ]
     },
     {
