@@ -16,6 +16,11 @@ import createSagaMiddleware from '@redux-saga/core'
 import rootReducer, { rootSaga } from './modules';
 import { END } from 'redux-saga'
 
+// Loadable Components 적용
+import { ChunkExtractor, ChunkExtractorManager } from '@loadable/server'
+
+const statsFile = path.resolve('./build/loadable-stats.json')
+
 // asset-manifest.json 에서 파일 경로 조회
 const manifest = JSON.parse(fs.readFileSync(path.resolve('./build/asset-manifest.json'), 'utf-8'))
 
@@ -25,7 +30,7 @@ const chunks = Object.keys(manifest.files)
                 .map(key => `<script src="${manifest.files[key]}"></script>`)
                 .join('')
 
-function createPage(root, stateScript){
+function createPage(root, tags){
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -35,16 +40,15 @@ function createPage(root, stateScript){
         <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no"/>
         <meta name="theme-color" content="#000000"/>
         <title>React App</title>
-        <link href="${manifest.files["main.css"]}" rel="stylesheet"/>
+        ${tags.styles}
+        ${tags.links}
       </head>
       <body>
         <noscript>You need to enable Javascript to run this app.</noscript>
         <div id="root">
           ${root}
         </div>
-        ${stateScript}
-        ${chunks}
-        <script src="${manifest.files["main.js"]}"></script>
+        ${tags.scripts}
       </body>
     </html>
   `
@@ -63,14 +67,21 @@ const serverRender = async (req, res, next) => {
     done: false,
     promises: []
   }
+
+  // 코드스플리팅에 필요한 파일 경로를 추출하기 위한 ChunkExtractor 함수
+  const extractor = new ChunkExtractor({ statsFile }) 
+
+  // ChunkExtractorManager : 어떤 컴포넌트가 렌더링될때 어느 chunk 파일을 읽어와야 하는지 경로들을 extractor 로 넣어줌
   const jsx = (
-    <PreloadContext.Provider value={preloadContext}>
-      <Provider store={store}>
-        <StaticRouter location={req.url} context={context}>
-          <App/>
-        </StaticRouter>
-      </Provider>
-    </PreloadContext.Provider>
+    <ChunkExtractorManager extractor={extractor}>
+      <PreloadContext.Provider value={preloadContext}>
+        <Provider store={store}>
+          <StaticRouter location={req.url} context={context}>
+            <App/>
+          </StaticRouter>
+        </Provider>
+      </PreloadContext.Provider>
+    </ChunkExtractorManager>
   )
   ReactDOMServer.renderToStaticMarkup(jsx) // 초기 렌더링의 경우 정적 페이지만 보여줌 (API서버 호출) - Preloader 컴포넌트에서 API 호출함
   store.dispatch(END) // END 액션을 디스패치하면 액션을 모니터링하는 모든 사가들이 종료됨 (API서버 호출을 더이상 못하도록 막아버림)
@@ -89,7 +100,14 @@ const serverRender = async (req, res, next) => {
   const root = ReactDOMServer.renderToString(jsx) // API서버에서 가져온 데이터로 다시 렌더링을 수행함
   const stateString = JSON.stringify(store.getState()).replace(/</g, '\\u003c') // 서버에서 만든 스토어 상태를 브라우저에서 재사용하기 위함
   const stateScript = `<script>__PRELOADED_STATE__ = ${stateString}</script>`
-  res.send(createPage(root, stateScript)) // html문서 (정적파일 포함)를 브라우저로 전송함
+  
+  const tags = {
+    scripts: stateScript + extractor.getScriptTags(), // stateScript : 리덕스 상태를 조회하기 위함
+    links: extractor.getLinkTags(),
+    styles: extractor.getStyleTags()
+  }
+  
+  res.send(createPage(root, tags)) // html문서 (정적파일 포함)를 브라우저로 전송함
 }
 
 const serve = express.static(path.resolve('./build'), {

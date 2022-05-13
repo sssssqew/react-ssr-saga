@@ -1,11 +1,14 @@
 {
   "files": {
     "main.js": "/server.js",
-    "main.css": "/static/css/main.c48c8537.css",
+    "pages-RedPage.js": "/js/pages-RedPage.chunk.js",
+    "pages-RedPage.css": "/static/css/pages-RedPage.4764a605.chunk.css",
+    "pages-BluePage.js": "/js/pages-BluePage.chunk.js",
+    "pages-BluePage.css": "/static/css/pages-BluePage.5832841b.chunk.css",
+    "pages-UsersPage.js": "/js/pages-UsersPage.chunk.js",
     "index.html": "/index.html"
   },
   "entrypoints": [
-    "server.js",
-    "static/css/main.c48c8537.css"
+    "server.js"
   ]
 }

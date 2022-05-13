@@ -1,5 +1,6 @@
 'use strict';
 
+const LoadablePlugin = require('@loadable/webpack-plugin') // 서버사이드렌더링과 코드스플리팅 사용시 화면 깜빡임 현상 해결을 위함
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
@@ -563,6 +564,7 @@ module.exports = function (webpackEnv) {
       ].filter(Boolean),
     },
     plugins: [
+      new LoadablePlugin(), // 추가된 부분
       // Generates an `index.html` file with the <script> injected.
       new HtmlWebpackPlugin(
         Object.assign(
