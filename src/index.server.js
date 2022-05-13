@@ -9,8 +9,12 @@ import fs from 'fs'
 import { legacy_createStore as createStore, applyMiddleware } from 'redux'
 import { Provider } from 'react-redux'
 import thunk from 'redux-thunk'
-import rootReducer from './modules'
 import PreloadContext from './lib/PreloadContext'
+
+// 리덕스 사가 설정
+import createSagaMiddleware from '@redux-saga/core'
+import rootReducer, { rootSaga } from './modules';
+import { END } from 'redux-saga'
 
 // asset-manifest.json 에서 파일 경로 조회
 const manifest = JSON.parse(fs.readFileSync(path.resolve('./build/asset-manifest.json'), 'utf-8'))
@@ -50,7 +54,10 @@ const app = express()
 
 const serverRender = async (req, res, next) => {
   const context = {}
-  const store = createStore(rootReducer, applyMiddleware(thunk)) // 요청이 들어올때마다 스토어를 생성함
+  const sagaMiddleware = createSagaMiddleware()
+  const store = createStore(rootReducer, applyMiddleware(thunk, sagaMiddleware)) // 요청이 들어올때마다 스토어를 생성함
+
+  const sagaPromise = sagaMiddleware.run(rootSaga).toPromise()
 
   const preloadContext = {
     done: false,
@@ -65,14 +72,21 @@ const serverRender = async (req, res, next) => {
       </Provider>
     </PreloadContext.Provider>
   )
-  ReactDOMServer.renderToStaticMarkup(jsx) // 초기 렌더링의 경우 정적 페이지만 보여줌 (API서버 호출)
+  ReactDOMServer.renderToStaticMarkup(jsx) // 초기 렌더링의 경우 정적 페이지만 보여줌 (API서버 호출) - Preloader 컴포넌트에서 API 호출함
+  store.dispatch(END) // END 액션을 디스패치하면 액션을 모니터링하는 모든 사가들이 종료됨 (API서버 호출을 더이상 못하도록 막아버림)
+  
+  // 서버사이드렌더링이란 ? API 서버에서 데이터 요청해서 가져온 다음 해당 데이터로 HTML 문서를 미리 만들어서 브라우저에 전달함
   try{
+    await sagaPromise // 기존에 진행중인 사가들이 종료될때까지 기다림 (API 요청이 끝날때가지 기다림)
     await Promise.all(preloadContext.promises) // 모든 API 서버 요청을 기다림
   }catch(e){
     return res.status(500)
   }
+
+  // 여기서부터는 API서버에서 가져온 데이터가 리덕스 스토어에 존재하므로 해당 데이터로 렌더링함
+
   preloadContext.done = true // API서버 호출이 완료되었음을 표시함 (API서버에 다시 요청을 보내지 않음)
-  const root = ReactDOMServer.renderToString(jsx) // API서버 호출후 다시 렌더링을 수행함
+  const root = ReactDOMServer.renderToString(jsx) // API서버에서 가져온 데이터로 다시 렌더링을 수행함
   const stateString = JSON.stringify(store.getState()).replace(/</g, '\\u003c') // 서버에서 만든 스토어 상태를 브라우저에서 재사용하기 위함
   const stateScript = `<script>__PRELOADED_STATE__ = ${stateString}</script>`
   res.send(createPage(root, stateScript)) // html문서 (정적파일 포함)를 브라우저로 전송함
